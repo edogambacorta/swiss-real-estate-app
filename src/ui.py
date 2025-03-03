@@ -238,20 +238,12 @@ def search_properties(city, min_price, max_price, canton, debug_mode):
             display_property(property)
         
         st.write(f"Showing {len(sorted_properties)} properties")
-        
-        # Property analysis
-        if st.button("Analyze Properties"):
-            with st.spinner("Analyzing properties..."):
-                analysis = st.session_state.property_agent.analyze_properties(properties, city, min_price, max_price, selected_canton)
-                st.markdown("## Property Analysis")
-                st.markdown(analysis)
     else:
         st.error("No properties found. Please try adjusting your search criteria.")
         if debug_mode:
             st.write("Debug information:")
             st.write(f"City: {city}")
             st.write(f"Price Range: {min_price} - {max_price} CHF")
-            st.write(f"Property Type: {property_type}")
             st.write(f"Canton: {canton}")
     
     return selected_canton
@@ -268,7 +260,6 @@ def display_city_overview(city, selected_canton, debug_mode):
             
             if city_overview:
                 logging.info(f"City overview fetched successfully for {city}, {selected_canton}")
-                st.markdown("<h2 style='font-size: 28px;'>🏙️ City Overview</h2>", unsafe_allow_html=True)
                 render_city_overview(city_overview)
             else:
                 logging.warning(f"No city overview data available for {city}, {selected_canton}")

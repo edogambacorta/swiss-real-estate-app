@@ -35,6 +35,7 @@
 - src/
   - ui.py: Contains the Streamlit UI code and error handling for user interactions
   - swiss_real_estate_agent.py: Contains the core logic for property search and analysis, including API key management and error handling
+  - swiss_cities_database.py: Implements SwissCitiesDatabase class for storing and managing city information
 - requirements.txt: Lists all Python package dependencies
 - .env: Stores API keys (not tracked in version control)
 - .env.example: Template for .env file (safe to include in version control)
@@ -44,15 +45,17 @@
 
 1. Environment variables are loaded at application start
 2. SwissPropertyAgent is initialized with error handling for API keys
-3. User inputs are collected through the Streamlit UI
-4. Property search is performed using the Firecrawl API with error handling
-5. Property analysis is conducted using the OpenAI API with error handling
-6. Results or error messages are displayed to the user in the Streamlit interface
+3. SwissCitiesDatabase is initialized with pre-populated city information
+4. User inputs are collected through the Streamlit UI
+5. City overview is fetched from SwissCitiesDatabase or fallback methods
+6. Property search is performed using the Firecrawl API with error handling
+7. Results or error messages are displayed to the user in the Streamlit interface
 
 ## Error Handling
 
 - Comprehensive error handling is implemented throughout the application
 - API-related errors (missing keys, invalid keys, API call failures) are caught and reported to the user
 - User-friendly error messages are displayed in the Streamlit interface
+- Fallback methods are implemented for city information when not found in SwissCitiesDatabase
 
-This structure ensures a separation of concerns, maintains security best practices for handling API keys, and provides a robust error handling system for a better user experience.
+This structure ensures a separation of concerns, maintains security best practices for handling API keys, provides a robust error handling system, and incorporates a local database for improved performance and reliability in retrieving city information.

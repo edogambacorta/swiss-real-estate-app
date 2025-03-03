@@ -6,6 +6,7 @@ from firecrawl import FirecrawlApp
 import os
 from dotenv import load_dotenv
 from .cantons import get_canton_code, get_canton_name, get_all_canton_names
+from .swiss_cities_database import swiss_cities
 import requests
 import logging
 
@@ -194,25 +195,30 @@ class SwissPropertyAgent:
         canton_name = get_canton_name(canton_code)
         
         try:
-            # Use a more robust method to fetch population data (placeholder for now)
-            population = self.get_population(city)
-
-            # Use our existing canton data for language information
-            main_languages = self.get_canton_languages(canton_code)
-
-            # Determine geographic location based on canton
-            geographic_location = self.get_geographic_location(canton_name)
-
-            # Get notable features
-            notable_features = self.get_notable_features(city, canton_name)
-
-            overview = {
-                "Population": str(population),
-                "Canton": canton_name,
-                "Geographic Location": geographic_location,
-                "Main Language(s)": ", ".join(main_languages),
-                "Notable Features": notable_features
-            }
+            city_info = swiss_cities.get_city_info(city)
+            if city_info:
+                overview = {
+                    "Population": str(city_info["Population"]),
+                    "Canton": canton_name,
+                    "Geographic Location": city_info["Geographic Location"],
+                    "Main Language(s)": ", ".join(city_info["Main Language(s)"]),
+                    "Notable Features": city_info["Notable Features"]
+                }
+            else:
+                # Fallback to existing methods if city not in database
+                population = self.get_population(city)
+                main_languages = self.get_canton_languages(canton_code)
+                geographic_location = self.get_geographic_location(canton_name)
+                notable_features = self.get_notable_features(city, canton_name)
+                
+                overview = {
+                    "Population": str(population),
+                    "Canton": canton_name,
+                    "Geographic Location": geographic_location,
+                    "Main Language(s)": ", ".join(main_languages),
+                    "Notable Features": notable_features
+                }
+            
             logging.info(f"City overview for {city}, {canton_name}: {overview}")
             return overview
         except Exception as e:
