@@ -186,6 +186,9 @@ class SwissPropertyAgent:
             return False
 
     def get_city_overview(self, city: str, canton: str) -> Dict[str, str]:
+        if not city or not canton:
+            raise ValueError("Both city and canton must be provided")
+
         canton_code = get_canton_code(canton)
         canton_name = get_canton_name(canton_code)
         

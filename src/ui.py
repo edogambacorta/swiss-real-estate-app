@@ -127,6 +127,12 @@ def display_property(property):
     if not price.startswith('CHF'):
         price = f"CHF {price}"
     
+    # Remove 'CHF' and any commas, then convert to float
+    numeric_price = float(price.replace('CHF', '').replace(',', '').strip())
+    
+    # Format the price with commas for display
+    formatted_price = f"{numeric_price:,.0f}"
+    
     st.markdown("<div class='property-card'>", unsafe_allow_html=True)
     
     col1, col2 = st.columns([1, 2])
@@ -147,13 +153,14 @@ def display_property(property):
     
     with col2:
         st.markdown(f"<h3 class='property-title'>{property['building_name']}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h4 class='property-price'>{price}</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p class='property-detail-item'>📍 <strong>Location:</strong> {property['location_address']}</p>", unsafe_allow_html=True)
-        st.markdown(f"<p class='property-detail-item'>🏠 <strong>Type:</strong> {property['property_type']}</p>", unsafe_allow_html=True)
-        st.markdown(f"<p class='property-detail-item'>📐 <strong>Size:</strong> {property.get('size', 'N/A')}</p>", unsafe_allow_html=True)
-        st.markdown(f"<p class='property-detail-item'>🛏️ <strong>Rooms:</strong> {property.get('rooms', 'N/A')}</p>", unsafe_allow_html=True)
-    
-    with st.expander("Description"):
+        st.markdown(f"<h4 class='property-price'>CHF {formatted_price}</h4>", unsafe_allow_html=True)
+        
+        st.markdown(f"<p class='property-detail-item' style='font-size: 24px;'>📍 <strong>Location:</strong> {property['location_address']}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p class='property-detail-item' style='font-size: 24px;'>🏠 <strong>Type:</strong> {property['property_type']}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p class='property-detail-item' style='font-size: 24px;'>📐 <strong>Size:</strong> {property.get('size', 'N/A')}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p class='property-detail-item' style='font-size: 24px;'>🛏️ <strong>Rooms:</strong> {property.get('rooms', 'N/A')}</p>", unsafe_allow_html=True)
+        
+        st.markdown(f"<h4 class='property-detail-item' style='font-size: 24px;'>📝 <strong>Description:</strong></h4>", unsafe_allow_html=True)
         st.markdown(f"<p class='property-description'>{property['description']}</p>", unsafe_allow_html=True)
     
     st.markdown(f"<a href='{property['listing_url']}' class='view-listing-button' target='_blank'>View Listing</a>", unsafe_allow_html=True)
@@ -176,10 +183,21 @@ def display_bullet_points(data, title):
     for item in data:
         st.markdown(f"• **{item['header']}**: {item['subheader']}")
 
+def get_emoji_for_key(key):
+    emoji_map = {
+        "Population": "👥",
+        "Canton": "🏛️",
+        "Geographic Location": "🗺️",
+        "Main Language(s)": "🗣️",
+        "Notable Features": "🌟"
+    }
+    return emoji_map.get(key, "•")
+
 def render_city_overview(city_overview):
-    st.subheader("🏙️ City Overview")
+    st.markdown("<h2 style='font-size: 28px;'>🏙️ City Overview</h2>", unsafe_allow_html=True)
     for key, value in city_overview.items():
-        st.markdown(f"• **{key}**: {value}")
+        emoji = get_emoji_for_key(key)
+        st.markdown(f"<p style='font-size: 24px;'>{emoji} <strong>{key}:</strong> {value}</p>", unsafe_allow_html=True)
 
 def search_properties(city, min_price, max_price, property_type, canton, debug_mode):
     selected_canton = None if canton == "All" else canton
@@ -228,24 +246,31 @@ def search_properties(city, min_price, max_price, property_type, canton, debug_m
 def display_city_overview(city, selected_canton, debug_mode):
     with st.spinner("🏙️ Fetching City Overview..."):
         try:
+            if not city or not selected_canton:
+                st.warning("Both city and canton must be selected to display the city overview.")
+                return
+
             logging.info(f"Fetching city overview for {city}, {selected_canton}")
             city_overview = st.session_state.property_agent.get_city_overview(city, selected_canton)
             
             if city_overview:
                 logging.info(f"City overview fetched successfully for {city}, {selected_canton}")
-                with st.expander("🏙️ City Overview", expanded=True):
-                    render_city_overview(city_overview)
+                st.markdown("<h2 style='font-size: 28px;'>🏙️ City Overview</h2>", unsafe_allow_html=True)
+                render_city_overview(city_overview)
             else:
                 logging.warning(f"No city overview data available for {city}, {selected_canton}")
                 st.warning("No city overview data available for the selected city and canton.")
+        except ValueError as e:
+            logging.error(f"Invalid input for city overview: {str(e)}")
+            st.error(f"Error fetching city overview: {str(e)}")
         except Exception as e:
             logging.error(f"Error fetching city overview for {city}, {selected_canton}: {str(e)}")
-            st.error("An error occurred while fetching the city overview. Please try again.")
-            if debug_mode:
-                st.write("Debug information:")
-                st.write(f"City: {city}")
-                st.write(f"Canton: {selected_canton}")
-                st.write(f"Error: {str(e)}")
+            st.error("An unexpected error occurred while fetching the city overview. Please try again.")
+        
+        if debug_mode:
+            st.write("Debug information:")
+            st.write(f"City: {city}")
+            st.write(f"Canton: {selected_canton}")
 
 def main():
     apply_custom_css()
