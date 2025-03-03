@@ -1,7 +1,11 @@
 import streamlit as st
 from src.swiss_real_estate_agent import SwissPropertyAgent
+from src.cantons import get_all_canton_names, get_canton_name, get_canton_code
 import os
 from dotenv import load_dotenv
+from PIL import Image
+import requests
+from io import BytesIO
 
 # Load environment variables
 load_dotenv()
@@ -14,15 +18,32 @@ def create_property_agent():
             st.error(f"Error initializing SwissPropertyAgent: {str(e)}")
             st.session_state.property_agent = None
 
+def load_image(url):
+    try:
+        response = requests.get(url)
+        img = Image.open(BytesIO(response.content))
+        return img
+    except Exception as e:
+        st.error(f"Error loading image: {str(e)}")
+        return None
+
 def display_property(property):
     with st.expander(f"{property['building_name']} - {property['price']}"):
         col1, col2 = st.columns(2)
         with col1:
             st.write(f"**Location:** {property['location_address']}")
             st.write(f"**Type:** {property['property_type']}")
-        with col2:
             st.write(f"**Size:** {property.get('size', 'N/A')}")
             st.write(f"**Rooms:** {property.get('rooms', 'N/A')}")
+        with col2:
+            if property.get('image_url'):
+                img = load_image(property['image_url'])
+                if img:
+                    st.image(img, use_column_width=True)
+                else:
+                    st.write("Image not available")
+            else:
+                st.write("No image available")
         st.write("**Description:**")
         st.write(property['description'][:200] + "..." if len(property['description']) > 200 else property['description'])
 
@@ -56,7 +77,7 @@ def main():
     with col3:
         property_type = st.selectbox("Property Type", ["Apartment", "House", "Chalet"])
     
-    canton = st.selectbox("Canton", ["All"] + ["Zurich", "Geneva", "Bern", "Vaud", "Valais", "St. Gallen", "Ticino", "Basel-Stadt", "Lucerne", "Aargau"])
+    canton = st.selectbox("Canton", ["All"] + get_all_canton_names())
 
     if st.button("🔍 Search Properties"):
         create_property_agent()
@@ -64,7 +85,8 @@ def main():
             return
         
         with st.spinner("🔍 Searching..."):
-            properties = st.session_state.property_agent.find_properties(city, max_price, property_type)
+            selected_canton = None if canton == "All" else canton
+            properties = st.session_state.property_agent.find_properties(city, max_price, property_type, selected_canton)
             if properties:
                 # Sorting options
                 sort_option = st.selectbox("Sort by:", ["Price (Low to High)", "Price (High to Low)", "Size (Small to Large)", "Size (Large to Small)"])
@@ -85,26 +107,47 @@ def main():
                 end_idx = start_idx + items_per_page
                 
                 for property in properties[start_idx:end_idx]:
-                    display_property(property)
+                    col1, col2 = st.columns([1, 4])
+                    with col1:
+                        if property.get('image_url'):
+                            img = load_image(property['image_url'])
+                            if img:
+                                st.image(img, width=100)
+                            else:
+                                st.write("Thumbnail not available")
+                        else:
+                            st.write("No thumbnail")
+                    with col2:
+                        display_property(property)
                 
                 st.write(f"Showing {start_idx + 1}-{min(end_idx, len(properties))} of {len(properties)} properties")
                 
                 # Property analysis
                 if st.button("Analyze Properties"):
                     with st.spinner("Analyzing properties..."):
-                        analysis = st.session_state.property_agent.analyze_properties(properties, city)
+                        analysis = st.session_state.property_agent.analyze_properties(properties, city, selected_canton)
                         st.markdown("## Property Analysis")
                         st.markdown(analysis)
             else:
                 st.error("No properties found or an error occurred while searching. Please try again.")
         
         with st.spinner("📊 Analyzing Trends..."):
-            trends = st.session_state.property_agent.get_location_trends(city)
+            trends = st.session_state.property_agent.get_location_trends(city, selected_canton)
             if trends:
                 with st.expander("📈 Market Trends"):
                     st.markdown(trends)
             else:
                 st.error("An error occurred while analyzing market trends. Please try again.")
+
+        # Canton-specific statistics
+        if selected_canton:
+            with st.spinner("📊 Fetching Canton Statistics..."):
+                canton_stats = st.session_state.property_agent.get_canton_statistics(selected_canton)
+                if canton_stats:
+                    with st.expander(f"📊 {selected_canton} Real Estate Statistics"):
+                        st.markdown(canton_stats)
+                else:
+                    st.error(f"An error occurred while fetching statistics for {selected_canton}. Please try again.")
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Swiss Real Estate Regulations")
@@ -115,6 +158,12 @@ def main():
         - Annual property tax varies by canton
         - Rental properties: Landlords can only increase rent with interest rate changes
         """)
+        
+        if selected_canton:
+            st.sidebar.markdown(f"### {selected_canton} Specific Regulations")
+            # Placeholder for canton-specific regulations
+            st.sidebar.markdown(f"Displaying regulations specific to {selected_canton}...")
+            # In a real application, you would fetch canton-specific regulations here
 
 if __name__ == "__main__":
     main()

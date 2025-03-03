@@ -8,8 +8,15 @@ An AI-powered real estate application focused on the Swiss market, built with St
 - AI-powered property analysis and recommendations
 - Location trend analysis and investment insights
 - Multilingual support (English, German, French, Italian)
-- Canton-specific filtering
-- Integration of Swiss real estate regulations
+- Comprehensive canton-based functionality:
+  - Canton-specific property filtering
+  - Canton-level real estate statistics
+  - Canton-specific market trends and analysis
+- Integration of Swiss real estate regulations, including canton-specific rules
+- Dynamic canton selection with support for all 26 Swiss cantons
+- Property images:
+  - Thumbnails in property listings
+  - Full-size images in property details
 
 ## Prerequisites
 
@@ -56,7 +63,35 @@ An AI-powered real estate application focused on the Swiss market, built with St
 
 3. Open your web browser and go to `http://localhost:8501` to use the Swiss Real Estate App.
 
-4. If you encounter any errors related to API keys, check your `.env` file and ensure the keys are correct.
+4. Use the canton selection dropdown to filter properties and view canton-specific information.
+
+5. Explore canton-level statistics and market trends in the expanded analysis sections.
+
+6. View property thumbnails in the listings and click on a property to see its full-size image and details.
+
+7. If you encounter any errors related to API keys, data retrieval, or image loading, check your `.env` file and ensure the keys are correct and your internet connection is stable.
+
+## Canton-Specific Functionality
+
+The Swiss Real Estate App now includes comprehensive canton-based features:
+
+- Property filtering by canton: Narrow down your search to specific cantons.
+- Canton-level statistics: View detailed real estate statistics for each canton.
+- Market trends by canton: Analyze market trends and investment opportunities specific to each canton.
+- Canton-specific regulations: Access information about real estate regulations that may vary by canton.
+
+These features provide a more targeted and insightful experience for users interested in specific regions within Switzerland.
+
+## Image Functionality
+
+The app now includes image support for property listings:
+
+- Thumbnails: Each property in the search results displays a small thumbnail image.
+- Full-size images: Clicking on a property reveals its full details, including a larger version of the property image.
+- Lazy loading: Images are loaded as needed to improve performance and reduce bandwidth usage.
+- Error handling: The app gracefully handles cases where images are unavailable or fail to load.
+
+This visual enhancement allows users to get a better sense of the properties at a glance and make more informed decisions.
 
 ## API Key Security and Error Handling
 
