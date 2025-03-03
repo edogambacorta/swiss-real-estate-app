@@ -23,12 +23,17 @@
    - Updated usage instructions to include canton-specific functionality
    - Expanded the features list to highlight canton-related capabilities
 
+5. Installed Watchdog module:
+   - Added Watchdog to requirements.txt
+   - Updated techContext.md to include Watchdog in the list of technologies used
+
 ## Current Focus
 
 - Enhancing the application with comprehensive canton-based functionality
 - Ensuring accurate and up-to-date canton-specific data and analysis
 - Improving user experience with canton-level insights and filtering
 - Maintaining robust error handling and API security measures
+- Exploring potential uses for Watchdog in automating tasks and monitoring file system events
 
 ## Next Steps
 
@@ -38,6 +43,7 @@
 4. Consider adding visualization tools for canton-level data comparisons
 5. Explore integration with canton-specific real estate databases or APIs
 6. Implement user preferences for default canton selection
+7. Investigate and implement Watchdog for relevant file monitoring tasks (e.g., watching for updates in property data files)
 
 ## Active Decisions and Considerations
 

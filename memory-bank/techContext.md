@@ -8,6 +8,7 @@
 - Firecrawl API: For web scraping real estate websites
 - python-dotenv: For loading environment variables
 - pydantic: For data validation and settings management
+- Watchdog: For monitoring file system events and automating tasks
 
 ## Development Setup
 

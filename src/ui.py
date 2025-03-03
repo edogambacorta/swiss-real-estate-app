@@ -15,12 +15,29 @@ load_dotenv()
 def apply_custom_css():
     st.markdown("""
     <style>
+        .app-header {
+            text-align: center;
+            color: #1e3a8a;
+            padding: 20px 0;
+            font-size: 2.5em;
+        }
         .property-card {
-            background-color: #f9f9f9;
+            display: flex;
+            background-color: #ffffff;
             border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .property-thumbnail {
+            width: 200px;
+            height: 100%;
+            object-fit: cover;
+        }
+        .property-content {
+            flex: 1;
+            padding: 20px;
+            position: relative;
         }
         .property-title {
             font-size: 24px;
@@ -36,21 +53,44 @@ def apply_custom_css():
         }
         .property-details {
             font-size: 16px;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .property-details strong {
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+        .property-expand {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: pointer;
+            color: #2563eb;
+            font-size: 24px;
         }
         .property-description {
             font-size: 14px;
             color: #4b5563;
             margin-top: 15px;
         }
+        .property-image-large {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
         .view-listing-button {
             background-color: #2563eb;
-            color: white;
+            color: white !important;
             padding: 10px 15px;
             border-radius: 5px;
             text-decoration: none;
             display: inline-block;
             margin-top: 15px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
         }
         .view-listing-button:hover {
             background-color: #1d4ed8;
@@ -78,25 +118,23 @@ def load_image(url):
 def display_property(property):
     st.markdown(f"""
     <div class="property-card">
-        <div class="property-title">{property['building_name']}</div>
-        <div class="property-price">{property['price']}</div>
-        <div class="property-details">📍 Location: {property['location_address']}</div>
-        <div class="property-details">🏠 Type: {property['property_type']}</div>
-        <div class="property-details">📐 Size: {property.get('size', 'N/A')}</div>
-        <div class="property-details">🛏️ Rooms: {property.get('rooms', 'N/A')}</div>
-        <div class="property-description">{property['description'][:200] + "..." if len(property['description']) > 200 else property['description']}</div>
-        {"<a href='" + property['listing_url'] + "' target='_blank' class='view-listing-button'>View Listing</a>" if property.get('listing_url') else ""}
+        <img src="{property.get('image_url', 'https://via.placeholder.com/200x300?text=No+Image')}" alt="Property Image" class="property-thumbnail">
+        <div class="property-content">
+            <div class="property-title">{property['building_name']}</div>
+            <div class="property-price">{property['price']}</div>
+            <div class="property-details">📍 <strong>Location:</strong> {property['location_address']}</div>
+            <div class="property-details">🏠 <strong>Type:</strong> {property['property_type']}</div>
+            <div class="property-details">📐 <strong>Size:</strong> {property.get('size', 'N/A')}</div>
+            <div class="property-details">🛏️ <strong>Rooms:</strong> {property.get('rooms', 'N/A')}</div>
+            <div class="property-expand">▼</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
-
-    if property.get('image_url'):
-        img = load_image(property['image_url'])
-        if img:
-            st.image(img, use_container_width=True, caption="Property Image")
-        else:
-            st.image("https://via.placeholder.com/400x300?text=Image+Not+Available", use_container_width=True, caption="Image not available")
-    else:
-        st.image("https://via.placeholder.com/400x300?text=No+Image+Available", use_container_width=True, caption="No image available")
+    
+    with st.expander("View Details"):
+        st.image(property.get('image_url', 'https://via.placeholder.com/800x600?text=No+Image'), use_column_width=True, caption="Property Image")
+        st.markdown(f"<div class='property-description'>{property['description']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<a href='{property['listing_url']}' target='_blank' class='view-listing-button'>View Listing</a>", unsafe_allow_html=True)
 
 def parse_price(price_str):
     if price_str == 'Price on request':
@@ -130,7 +168,7 @@ def main():
         language = st.selectbox("Language / Sprache / Langue / Lingua", ["English", "Deutsch", "Français", "Italiano"])
         debug_mode = st.checkbox("Debug Mode")
     
-    st.markdown("<h1 style='text-align: center; color: #1e3a8a;'>🏠 Swiss Property Finder</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='app-header'>🏠 Swiss Property Finder</h1>", unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -180,18 +218,7 @@ def main():
                     
                     # Display all properties without pagination
                     for property in properties:
-                        col1, col2 = st.columns([1, 4])
-                        with col1:
-                            if property.get('image_url'):
-                                img = load_image(property['image_url'])
-                                if img:
-                                    st.image(img, width=100)
-                                else:
-                                    st.write("Thumbnail not available")
-                            else:
-                                st.write("No thumbnail")
-                        with col2:
-                            display_property(property)
+                        display_property(property)
                     
                     st.write(f"Showing {len(properties)} properties")
                     
