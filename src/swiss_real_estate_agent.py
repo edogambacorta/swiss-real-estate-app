@@ -52,7 +52,7 @@ class SwissPropertyAgent:
         except Exception as e:
             raise ValueError(f"Error initializing APIs: {str(e)}")
 
-    def find_properties(self, city: str, min_price: float, max_price: float, property_type: str = "Apartment", canton: Optional[str] = None) -> Optional[List[Dict]]:
+    def find_properties(self, city: str, min_price: float, max_price: float, property_type: str = "Apartment", canton: Optional[str] = None, num_results: int = 10) -> Optional[List[Dict]]:
         formatted_city = city.lower().replace(" ", "-")
         canton_code = get_canton_code(canton) if canton else None
         
@@ -63,7 +63,7 @@ class SwissPropertyAgent:
         ]
         
         try:
-            prompt = f"Extract property listings in {city} between {min_price} and {max_price} CHF, including image URLs and original listing URLs"
+            prompt = f"Extract at least {num_results * 2} property listings in {city} between {min_price} and {max_price} CHF, including image URLs and original listing URLs"
             if canton_code:
                 prompt += f" in the canton of {get_canton_name(canton_code)}"
             
@@ -85,12 +85,18 @@ class SwissPropertyAgent:
                 price = self._parse_price(prop['price'])
                 if min_price <= price <= max_price:
                     filtered_properties.append(prop)
+                if len(filtered_properties) >= num_results:
+                    break
             
             if canton_code:
-                filtered_properties = [prop for prop in filtered_properties if prop['canton'] == canton_code]
+                filtered_properties = [prop for prop in filtered_properties if prop['canton'] == canton_code][:num_results]
             
             print(f"Number of properties after filtering: {len(filtered_properties)}")  # Debug log
-            return filtered_properties
+            
+            if len(filtered_properties) < num_results:
+                print(f"Warning: Only found {len(filtered_properties)} properties matching the criteria")
+            
+            return filtered_properties[:num_results]
         except Exception as e:
             error_message = f"Error finding properties: {str(e)}"
             print(error_message)

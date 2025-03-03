@@ -7,8 +7,56 @@ from PIL import Image
 import requests
 from io import BytesIO
 
+st.set_page_config(page_title="Swiss Real Estate Agent", page_icon="🏡", layout="wide")
+
 # Load environment variables
 load_dotenv()
+
+def apply_custom_css():
+    st.markdown("""
+    <style>
+        .property-card {
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .property-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+        }
+        .property-price {
+            font-size: 20px;
+            font-weight: bold;
+            color: #059669;
+            margin-bottom: 15px;
+        }
+        .property-details {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .property-description {
+            font-size: 14px;
+            color: #4b5563;
+            margin-top: 15px;
+        }
+        .view-listing-button {
+            background-color: #2563eb;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 15px;
+        }
+        .view-listing-button:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 def create_property_agent():
     if 'property_agent' not in st.session_state:
@@ -28,26 +76,27 @@ def load_image(url):
         return None
 
 def display_property(property):
-    with st.expander(f"{property['building_name']} - {property['price']}"):
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write(f"**Location:** {property['location_address']}")
-            st.write(f"**Type:** {property['property_type']}")
-            st.write(f"**Size:** {property.get('size', 'N/A')}")
-            st.write(f"**Rooms:** {property.get('rooms', 'N/A')}")
-            if property.get('listing_url'):
-                st.markdown(f"[View Listing]({property['listing_url']})")
-        with col2:
-            if property.get('image_url'):
-                img = load_image(property['image_url'])
-                if img:
-                    st.image(img, use_container_width=True)
-                else:
-                    st.write("Image not available")
-            else:
-                st.write("No image available")
-        st.write("**Description:**")
-        st.write(property['description'][:200] + "..." if len(property['description']) > 200 else property['description'])
+    st.markdown(f"""
+    <div class="property-card">
+        <div class="property-title">{property['building_name']}</div>
+        <div class="property-price">{property['price']}</div>
+        <div class="property-details">📍 Location: {property['location_address']}</div>
+        <div class="property-details">🏠 Type: {property['property_type']}</div>
+        <div class="property-details">📐 Size: {property.get('size', 'N/A')}</div>
+        <div class="property-details">🛏️ Rooms: {property.get('rooms', 'N/A')}</div>
+        <div class="property-description">{property['description'][:200] + "..." if len(property['description']) > 200 else property['description']}</div>
+        {"<a href='" + property['listing_url'] + "' target='_blank' class='view-listing-button'>View Listing</a>" if property.get('listing_url') else ""}
+    </div>
+    """, unsafe_allow_html=True)
+
+    if property.get('image_url'):
+        img = load_image(property['image_url'])
+        if img:
+            st.image(img, use_container_width=True, caption="Property Image")
+        else:
+            st.image("https://via.placeholder.com/400x300?text=Image+Not+Available", use_container_width=True, caption="Image not available")
+    else:
+        st.image("https://via.placeholder.com/400x300?text=No+Image+Available", use_container_width=True, caption="No image available")
 
 def parse_price(price_str):
     if price_str == 'Price on request':
@@ -72,7 +121,7 @@ def display_canton_statistics(canton_data):
     display_bullet_points(canton_data["real_estate_statistics"], f"📊 {canton_data['canton_name']} Real Estate Statistics")
 
 def main():
-    st.set_page_config(page_title="Swiss Real Estate Agent", page_icon="🏡", layout="wide")
+    apply_custom_css()
     
     with st.sidebar:
         st.title("🔑 Configuration")
@@ -80,8 +129,8 @@ def main():
         
         language = st.selectbox("Language / Sprache / Langue / Lingua", ["English", "Deutsch", "Français", "Italiano"])
         debug_mode = st.checkbox("Debug Mode")
-        
-    st.title("🏠 Swiss Property Finder")
+    
+    st.markdown("<h1 style='text-align: center; color: #1e3a8a;'>🏠 Swiss Property Finder</h1>", unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -110,7 +159,8 @@ def main():
         else:
             with st.spinner("🔍 Searching..."):
                 selected_canton = None if canton == "All" else canton
-                properties = st.session_state.property_agent.find_properties(city, min_price, max_price, property_type, selected_canton)
+                num_results = 10
+                properties = st.session_state.property_agent.find_properties(city, min_price, max_price, property_type, selected_canton, num_results=num_results)
                 
                 if debug_mode:
                     st.write(f"Raw properties data: {properties}")
@@ -128,13 +178,8 @@ def main():
                     elif sort_option == "Size (Large to Small)":
                         properties.sort(key=lambda x: float(x.get('size', '0').split()[0]) if x.get('size') else 0, reverse=True)
                     
-                    # Pagination
-                    items_per_page = 5
-                    page_number = st.number_input("Page", min_value=1, max_value=(len(properties) - 1) // items_per_page + 1, value=1)
-                    start_idx = (page_number - 1) * items_per_page
-                    end_idx = start_idx + items_per_page
-                    
-                    for property in properties[start_idx:end_idx]:
+                    # Display all properties without pagination
+                    for property in properties:
                         col1, col2 = st.columns([1, 4])
                         with col1:
                             if property.get('image_url'):
@@ -148,7 +193,7 @@ def main():
                         with col2:
                             display_property(property)
                     
-                    st.write(f"Showing {start_idx + 1}-{min(end_idx, len(properties))} of {len(properties)} properties")
+                    st.write(f"Showing {len(properties)} properties")
                     
                     # Property analysis
                     if st.button("Analyze Properties"):
