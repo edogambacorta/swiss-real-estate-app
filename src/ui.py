@@ -159,16 +159,16 @@ def display_property(property):
     with col1:
         image_url = property.get('image_url')
         if image_url is None:
-            st.image('https://via.placeholder.com/300x225?text=No+Image+URL', use_container_width=True)
+            st.image('https://via.placeholder.com/300x225?text=No+Image+URL', use_column_width=True)
         else:
             if image_url.startswith(('http://', 'https://')):
                 image = load_image(image_url)
                 if image is not None:
-                    st.image(image, use_container_width=True)
+                    st.image(image, use_column_width=True)
                 else:
-                    st.image('https://via.placeholder.com/300x225?text=Image+Load+Error', use_container_width=True)
+                    st.image('https://via.placeholder.com/300x225?text=Image+Load+Error', use_column_width=True)
             else:
-                st.image('https://via.placeholder.com/300x225?text=Invalid+URL', use_container_width=True)
+                st.image('https://via.placeholder.com/300x225?text=Invalid+URL', use_column_width=True)
     
     with col2:
         st.markdown(f"<h3 class='property-title'>{property['building_name']}</h3>", unsafe_allow_html=True)
