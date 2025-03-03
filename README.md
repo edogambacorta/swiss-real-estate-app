@@ -46,22 +46,27 @@ An AI-powered real estate application focused on the Swiss market, built with St
 
 ## Usage
 
-Run the Streamlit app:
+1. Ensure your `.env` file is set up correctly with your API keys.
 
-```
-streamlit run main.py
-```
+2. Run the Streamlit app:
 
-Open your web browser and go to `http://localhost:8501` to use the Swiss Real Estate App.
+   ```
+   streamlit run main.py
+   ```
 
-## API Key Security
+3. Open your web browser and go to `http://localhost:8501` to use the Swiss Real Estate App.
 
-This application uses environment variables to securely store API keys. Always follow these best practices:
+4. If you encounter any errors related to API keys, check your `.env` file and ensure the keys are correct.
+
+## API Key Security and Error Handling
+
+This application uses environment variables to securely store API keys and includes error handling for API-related issues. Always follow these best practices:
 
 1. Never share your API keys publicly or commit them to version control.
 2. Use environment variables or secure secret management systems in production.
 3. Regularly rotate your API keys, especially if you suspect they've been compromised.
 4. Set appropriate permissions and rate limits on your API keys when possible.
+5. If you encounter errors related to API keys or API calls, check the error messages in the application for guidance.
 
 ## Contributing
 

@@ -1,5 +1,5 @@
 import streamlit as st
-from swiss_real_estate_agent import SwissPropertyAgent
+from src.swiss_real_estate_agent import SwissPropertyAgent
 import os
 from dotenv import load_dotenv
 
@@ -8,18 +8,18 @@ load_dotenv()
 
 def create_property_agent():
     if 'property_agent' not in st.session_state:
-        st.session_state.property_agent = SwissPropertyAgent(
-            firecrawl_api_key=os.getenv('FIRECRAWL_API_KEY'),
-            openai_api_key=os.getenv('OPENAI_API_KEY'),
-            model_id="gpt-4o"
-        )
+        try:
+            st.session_state.property_agent = SwissPropertyAgent(model_id="gpt-4o")
+        except ValueError as e:
+            st.error(f"Error initializing SwissPropertyAgent: {str(e)}")
+            st.session_state.property_agent = None
 
 def main():
     st.set_page_config(page_title="Swiss Real Estate Agent", page_icon="🏡", layout="wide")
     
     with st.sidebar:
         st.title("🔑 Configuration")
-        st.info("API keys are now loaded from environment variables.")
+        st.info("API keys are loaded from environment variables.")
         
         language = st.selectbox("Language / Sprache / Langue / Lingua", ["English", "Deutsch", "Français", "Italiano"])
         
@@ -36,19 +36,24 @@ def main():
     canton = st.selectbox("Canton", ["All"] + ["Zurich", "Geneva", "Bern", "Vaud", "Valais", "St. Gallen", "Ticino", "Basel-Stadt", "Lucerne", "Aargau"])
 
     if st.button("🔍 Search Properties"):
-        if not all([os.getenv('FIRECRAWL_API_KEY'), os.getenv('OPENAI_API_KEY')]):
-            st.error("⚠️ API keys not found in environment variables!")
+        create_property_agent()
+        if st.session_state.property_agent is None:
             return
         
-        create_property_agent()
         with st.spinner("🔍 Searching..."):
             results = st.session_state.property_agent.find_properties(city, max_price, property_type)
-            st.markdown(results)
+            if results:
+                st.markdown(results)
+            else:
+                st.error("An error occurred while searching for properties. Please try again.")
         
         with st.spinner("📊 Analyzing Trends..."):
             trends = st.session_state.property_agent.get_location_trends(city)
-            with st.expander("📈 Market Trends"):
-                st.markdown(trends)
+            if trends:
+                with st.expander("📈 Market Trends"):
+                    st.markdown(trends)
+            else:
+                st.error("An error occurred while analyzing market trends. Please try again.")
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Swiss Real Estate Regulations")

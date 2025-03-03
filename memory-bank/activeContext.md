@@ -2,41 +2,44 @@
 
 ## Recent Changes
 
-1. Implemented secure API key management:
-   - Created a .env file for storing API keys as environment variables
-   - Updated src/ui.py to load API keys from environment variables instead of user input
-   - Added python-dotenv to requirements.txt for loading environment variables
+1. Updated src/swiss_real_estate_agent.py:
+   - Removed API key parameters from the SwissPropertyAgent constructor
+   - Implemented error handling for missing or invalid API keys
+   - Added try-except blocks for API calls to handle potential errors
 
-2. Updated README.md:
-   - Added instructions for setting up the .env file
-   - Included a section on API key security best practices
+2. Updated src/ui.py:
+   - Removed API key input fields from the UI
+   - Updated error handling for SwissPropertyAgent initialization and API calls
+   - Improved user feedback for API-related errors
 
-3. Created Memory Bank:
-   - Established memory-bank directory
-   - Created techContext.md to document technical aspects of the project
-   - Created this activeContext.md file to track recent changes and current focus
+3. Updated README.md:
+   - Added more detailed instructions for setting up the .env file
+   - Expanded the section on API key security and error handling
+   - Included guidance on troubleshooting API key-related issues
 
 ## Current Focus
 
-- Ensuring secure handling of API keys throughout the application
-- Improving user experience by removing the need for manual API key entry
+- Ensuring robust error handling throughout the application
+- Improving user experience by providing clear feedback on API-related issues
 - Maintaining up-to-date documentation for developers and users
 
 ## Next Steps
 
-1. Review and potentially update src/swiss_real_estate_agent.py to ensure it's compatible with the new API key management approach
-2. Implement error handling for cases where API keys are missing or invalid
-3. Consider adding unit tests for the API key loading process
-4. Update any deployment scripts or documentation to reflect the new .env file requirement
+1. Implement unit tests for the API key loading process and error handling
+2. Consider adding more Swiss-specific features, such as:
+   - Integrating more detailed Swiss real estate regulations
+   - Enhancing canton-specific filtering and analysis
+3. Optimize performance of property searches and trend analysis
+4. Explore options for data persistence (e.g., saving user searches or favorite properties)
 
 ## Active Decisions and Considerations
 
-- Decided to use environment variables for API key management to enhance security
-- Considering the trade-off between security and user convenience (no need to enter API keys in UI, but requires initial setup of .env file)
-- May need to provide more detailed instructions for users on how to obtain API keys and set up the .env file
+- Prioritized security and error handling in the recent updates
+- Considering the balance between providing detailed error messages and maintaining API security
+- May need to provide more guidance for users on obtaining API keys from Firecrawl and OpenAI
 
 ## Known Issues
 
 - None currently identified related to recent changes
 
-This active context reflects the current state of the project as of the latest update to the API key management system. It will be updated as the project evolves and new changes are implemented.
+This active context reflects the current state of the project as of the latest updates to API key management, error handling, and documentation. It will be updated as the project evolves and new changes are implemented.
