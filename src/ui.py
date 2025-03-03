@@ -230,11 +230,14 @@ def search_properties(city, min_price, max_price, canton, debug_mode):
         st.write(f"Raw properties data: {properties}")
     
     if properties:
+        # Sort properties from lowest to highest price
+        sorted_properties = sorted(properties, key=lambda x: parse_price(x['price']))
+        
         # Display all properties without pagination
-        for property in properties:
+        for property in sorted_properties:
             display_property(property)
         
-        st.write(f"Showing {len(properties)} properties")
+        st.write(f"Showing {len(sorted_properties)} properties")
         
         # Property analysis
         if st.button("Analyze Properties"):
