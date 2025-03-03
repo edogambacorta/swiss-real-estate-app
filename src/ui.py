@@ -26,6 +26,15 @@ def apply_custom_css():
             padding: 20px 0;
             font-size: 2.5em;
         }
+        .centered-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
         .property-card {
             background-color: #ffffff;
             border-radius: 10px;
@@ -33,6 +42,7 @@ def apply_custom_css():
             overflow: hidden;
             margin-bottom: 20px;
             padding: 20px;
+            width: 100%;
         }
         .property-header {
             display: flex;
@@ -199,27 +209,15 @@ def render_city_overview(city_overview):
         emoji = get_emoji_for_key(key)
         st.markdown(f"<p style='font-size: 24px;'>{emoji} <strong>{key}:</strong> {value}</p>", unsafe_allow_html=True)
 
-def search_properties(city, min_price, max_price, property_type, canton, debug_mode):
+def search_properties(city, min_price, max_price, canton, debug_mode):
     selected_canton = None if canton == "All" else canton
     num_results = 10
-    properties = st.session_state.property_agent.find_properties(city, min_price, max_price, property_type, selected_canton, num_results=num_results)
+    properties = st.session_state.property_agent.find_properties(city, min_price, max_price, selected_canton, num_results=num_results)
     
     if debug_mode:
         st.write(f"Raw properties data: {properties}")
     
     if properties:
-        # Sorting options
-        sort_option = st.selectbox("Sort by:", ["Price (Low to High)", "Price (High to Low)", "Size (Small to Large)", "Size (Large to Small)"])
-        
-        if sort_option == "Price (Low to High)":
-            properties.sort(key=lambda x: parse_price(x['price']))
-        elif sort_option == "Price (High to Low)":
-            properties.sort(key=lambda x: parse_price(x['price']), reverse=True)
-        elif sort_option == "Size (Small to Large)":
-            properties.sort(key=lambda x: float(x.get('size', '0').split()[0]) if x.get('size') else 0)
-        elif sort_option == "Size (Large to Small)":
-            properties.sort(key=lambda x: float(x.get('size', '0').split()[0]) if x.get('size') else 0, reverse=True)
-        
         # Display all properties without pagination
         for property in properties:
             display_property(property)
@@ -284,15 +282,11 @@ def main():
     
     st.markdown("<h1 class='app-header'>🏠 Swiss Property Finder</h1>", unsafe_allow_html=True)
     
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        city = st.text_input("City", placeholder="e.g., Zurich, Geneva")
-    with col2:
-        min_price = st.number_input("Min Price (CHF)", min_value=0.0, step=100000.0, value=0.0)
-    with col3:
-        max_price = st.number_input("Max Price (CHF)", min_value=0.0, step=100000.0, value=1000000.0)
-    with col4:
-        property_type = st.selectbox("Property Type", ["Apartment", "House", "Chalet"])
+    st.markdown("<div class='centered-content'>", unsafe_allow_html=True)
+    
+    city = st.text_input("City", placeholder="e.g., Zurich, Geneva")
+    min_price = st.number_input("Min Price (CHF)", min_value=0.0, step=100000.0, value=0.0)
+    max_price = st.number_input("Max Price (CHF)", min_value=0.0, step=100000.0, value=1000000.0)
     
     canton = st.selectbox("Canton", ["All"] + get_all_canton_names())
 
@@ -314,8 +308,8 @@ def main():
             logging.warning(f"Invalid price range: {min_price} - {max_price}")
             st.error("Minimum price must be less than maximum price.")
         else:
-            logging.info(f"Searching properties for {city}, {canton}, {property_type}, price range: {min_price} - {max_price}")
-            selected_canton = search_properties(city, min_price, max_price, property_type, canton, debug_mode)
+            logging.info(f"Searching properties for {city}, {canton}, price range: {min_price} - {max_price}")
+            selected_canton = search_properties(city, min_price, max_price, canton, debug_mode)
             logging.info(f"Displaying city overview for {city}, {selected_canton}")
             display_city_overview(city, selected_canton, debug_mode)
 

@@ -57,12 +57,13 @@ class SwissPropertyAgent:
         except Exception as e:
             raise ValueError(f"Error initializing APIs: {str(e)}")
 
-    def find_properties(self, city: str, min_price: float, max_price: float, property_type: str = "Apartment", canton: Optional[str] = None, num_results: int = 10) -> Optional[List[Dict]]:
+    def find_properties(self, city: str, min_price: float, max_price: float, canton: Optional[str] = None, num_results: int = 10) -> Optional[List[Dict]]:
         formatted_city = city.lower().replace(" ", "-")
         canton_code = get_canton_code(canton) if canton else None
         
         urls = [
-            f"https://www.homegate.ch/buy/{property_type.lower()}/city-{formatted_city}",
+            f"https://www.homegate.ch/buy/apartment/city-{formatted_city}",
+            f"https://www.homegate.ch/buy/house/city-{formatted_city}",
             f"https://www.immoscout24.ch/en/real-estate/buy/city-{formatted_city}",
             f"https://www.comparis.ch/immobilien/marktplatz/{formatted_city}/kaufen",
         ]
