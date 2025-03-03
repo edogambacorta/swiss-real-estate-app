@@ -17,6 +17,9 @@ An AI-powered real estate application focused on the Swiss market, built with St
 - Property images:
   - Thumbnails in property listings
   - Full-size images in property details
+- Direct access to original property listings:
+  - "View Listing" button for each property
+  - Links to the source website for detailed information
 
 ## Prerequisites
 
@@ -69,7 +72,9 @@ An AI-powered real estate application focused on the Swiss market, built with St
 
 6. View property thumbnails in the listings and click on a property to see its full-size image and details.
 
-7. If you encounter any errors related to API keys, data retrieval, or image loading, check your `.env` file and ensure the keys are correct and your internet connection is stable.
+7. Use the "View Listing" button to access the original property listing on the source website for more detailed information.
+
+8. If you encounter any errors related to API keys, data retrieval, or image loading, check your `.env` file and ensure the keys are correct and your internet connection is stable.
 
 ## Canton-Specific Functionality
 
@@ -82,16 +87,18 @@ The Swiss Real Estate App now includes comprehensive canton-based features:
 
 These features provide a more targeted and insightful experience for users interested in specific regions within Switzerland.
 
-## Image Functionality
+## Image and Listing Functionality
 
-The app now includes image support for property listings:
+The app now includes image support and direct access to original listings:
 
 - Thumbnails: Each property in the search results displays a small thumbnail image.
 - Full-size images: Clicking on a property reveals its full details, including a larger version of the property image.
 - Lazy loading: Images are loaded as needed to improve performance and reduce bandwidth usage.
 - Error handling: The app gracefully handles cases where images are unavailable or fail to load.
+- View Listing: Each property has a "View Listing" button that links directly to the original listing on the source website.
+- Source integration: Users can easily access more detailed information and contact sellers through the original listings.
 
-This visual enhancement allows users to get a better sense of the properties at a glance and make more informed decisions.
+These enhancements allow users to get a better sense of the properties at a glance, make more informed decisions, and easily access additional information from the source websites.
 
 ## API Key Security and Error Handling
 

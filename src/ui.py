@@ -35,11 +35,13 @@ def display_property(property):
             st.write(f"**Type:** {property['property_type']}")
             st.write(f"**Size:** {property.get('size', 'N/A')}")
             st.write(f"**Rooms:** {property.get('rooms', 'N/A')}")
+            if property.get('listing_url'):
+                st.markdown(f"[View Listing]({property['listing_url']})")
         with col2:
             if property.get('image_url'):
                 img = load_image(property['image_url'])
                 if img:
-                    st.image(img, use_column_width=True)
+                    st.image(img, use_container_width=True)
                 else:
                     st.write("Image not available")
             else:
@@ -77,15 +79,18 @@ def main():
         st.info("API keys are loaded from environment variables.")
         
         language = st.selectbox("Language / Sprache / Langue / Lingua", ["English", "Deutsch", "Français", "Italiano"])
+        debug_mode = st.checkbox("Debug Mode")
         
     st.title("🏠 Swiss Property Finder")
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         city = st.text_input("City", placeholder="e.g., Zurich, Geneva")
     with col2:
-        max_price = st.number_input("Max Price (CHF)", min_value=0.0, step=100000.0)
+        min_price = st.number_input("Min Price (CHF)", min_value=0.0, step=100000.0, value=0.0)
     with col3:
+        max_price = st.number_input("Max Price (CHF)", min_value=0.0, step=100000.0, value=1000000.0)
+    with col4:
         property_type = st.selectbox("Property Type", ["Apartment", "House", "Chalet"])
     
     canton = st.selectbox("Canton", ["All"] + get_all_canton_names())
@@ -95,68 +100,92 @@ def main():
         if st.session_state.property_agent is None:
             return
         
-        with st.spinner("🔍 Searching..."):
-            selected_canton = None if canton == "All" else canton
-            properties = st.session_state.property_agent.find_properties(city, max_price, property_type, selected_canton)
-            if properties:
-                # Sorting options
-                sort_option = st.selectbox("Sort by:", ["Price (Low to High)", "Price (High to Low)", "Size (Small to Large)", "Size (Large to Small)"])
-                
-                if sort_option == "Price (Low to High)":
-                    properties.sort(key=lambda x: parse_price(x['price']))
-                elif sort_option == "Price (High to Low)":
-                    properties.sort(key=lambda x: parse_price(x['price']), reverse=True)
-                elif sort_option == "Size (Small to Large)":
-                    properties.sort(key=lambda x: float(x.get('size', '0').split()[0]) if x.get('size') else 0)
-                elif sort_option == "Size (Large to Small)":
-                    properties.sort(key=lambda x: float(x.get('size', '0').split()[0]) if x.get('size') else 0, reverse=True)
-                
-                # Pagination
-                items_per_page = 5
-                page_number = st.number_input("Page", min_value=1, max_value=(len(properties) - 1) // items_per_page + 1, value=1)
-                start_idx = (page_number - 1) * items_per_page
-                end_idx = start_idx + items_per_page
-                
-                for property in properties[start_idx:end_idx]:
-                    col1, col2 = st.columns([1, 4])
-                    with col1:
-                        if property.get('image_url'):
-                            img = load_image(property['image_url'])
-                            if img:
-                                st.image(img, width=100)
-                            else:
-                                st.write("Thumbnail not available")
-                        else:
-                            st.write("No thumbnail")
-                    with col2:
-                        display_property(property)
-                
-                st.write(f"Showing {start_idx + 1}-{min(end_idx, len(properties))} of {len(properties)} properties")
-                
-                # Property analysis
-                if st.button("Analyze Properties"):
-                    with st.spinner("Analyzing properties..."):
-                        analysis = st.session_state.property_agent.analyze_properties(properties, city, selected_canton)
-                        st.markdown("## Property Analysis")
-                        st.markdown(analysis)
-            else:
-                st.error("No properties found or an error occurred while searching. Please try again.")
+        if debug_mode:
+            st.write("Testing API connection...")
+            api_test_result = st.session_state.property_agent.test_api_connection()
+            st.write(f"API Test Result: {'Success' if api_test_result else 'Failed'}")
         
-        with st.spinner("📊 Analyzing Market Insights..."):
-            trends = st.session_state.property_agent.get_location_trends(city, selected_canton)
-            canton_stats = st.session_state.property_agent.get_canton_statistics(selected_canton) if selected_canton else None
+        if min_price >= max_price:
+            st.error("Minimum price must be less than maximum price.")
+        else:
+            with st.spinner("🔍 Searching..."):
+                selected_canton = None if canton == "All" else canton
+                properties = st.session_state.property_agent.find_properties(city, min_price, max_price, property_type, selected_canton)
+                
+                if debug_mode:
+                    st.write(f"Raw properties data: {properties}")
+                
+                if properties:
+                    # Sorting options
+                    sort_option = st.selectbox("Sort by:", ["Price (Low to High)", "Price (High to Low)", "Size (Small to Large)", "Size (Large to Small)"])
+                    
+                    if sort_option == "Price (Low to High)":
+                        properties.sort(key=lambda x: parse_price(x['price']))
+                    elif sort_option == "Price (High to Low)":
+                        properties.sort(key=lambda x: parse_price(x['price']), reverse=True)
+                    elif sort_option == "Size (Small to Large)":
+                        properties.sort(key=lambda x: float(x.get('size', '0').split()[0]) if x.get('size') else 0)
+                    elif sort_option == "Size (Large to Small)":
+                        properties.sort(key=lambda x: float(x.get('size', '0').split()[0]) if x.get('size') else 0, reverse=True)
+                    
+                    # Pagination
+                    items_per_page = 5
+                    page_number = st.number_input("Page", min_value=1, max_value=(len(properties) - 1) // items_per_page + 1, value=1)
+                    start_idx = (page_number - 1) * items_per_page
+                    end_idx = start_idx + items_per_page
+                    
+                    for property in properties[start_idx:end_idx]:
+                        col1, col2 = st.columns([1, 4])
+                        with col1:
+                            if property.get('image_url'):
+                                img = load_image(property['image_url'])
+                                if img:
+                                    st.image(img, width=100)
+                                else:
+                                    st.write("Thumbnail not available")
+                            else:
+                                st.write("No thumbnail")
+                        with col2:
+                            display_property(property)
+                    
+                    st.write(f"Showing {start_idx + 1}-{min(end_idx, len(properties))} of {len(properties)} properties")
+                    
+                    # Property analysis
+                    if st.button("Analyze Properties"):
+                        with st.spinner("Analyzing properties..."):
+                            analysis = st.session_state.property_agent.analyze_properties(properties, city, min_price, max_price, selected_canton)
+                            st.markdown("## Property Analysis")
+                            st.markdown(analysis)
+                else:
+                    st.error("No properties found. Please try adjusting your search criteria.")
+                    if debug_mode:
+                        st.write("Debug information:")
+                        st.write(f"City: {city}")
+                        st.write(f"Price Range: {min_price} - {max_price} CHF")
+                        st.write(f"Property Type: {property_type}")
+                        st.write(f"Canton: {canton}")
             
-            if trends or canton_stats:
-                with st.expander("📈 Market Insights", expanded=True):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if trends:
-                            display_market_trends(trends)
-                    with col2:
-                        if selected_canton and canton_stats:
-                            display_canton_statistics(canton_stats)
-            else:
-                st.error("An error occurred while analyzing market insights. Please try again.")
+            with st.spinner("📊 Analyzing Market Insights..."):
+                trends = st.session_state.property_agent.get_location_trends(city, selected_canton)
+                canton_stats = st.session_state.property_agent.get_canton_statistics(selected_canton) if selected_canton else None
+                
+                if trends or canton_stats:
+                    with st.expander("📈 Market Insights", expanded=True):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if trends:
+                                st.write(f"Market Trends for properties between {min_price} and {max_price} CHF:")
+                                display_market_trends(trends)
+                        with col2:
+                            if selected_canton and canton_stats:
+                                st.write(f"Canton Statistics for properties between {min_price} and {max_price} CHF:")
+                                display_canton_statistics(canton_stats)
+                else:
+                    st.error("An error occurred while analyzing market insights. Please try again.")
+                    if debug_mode:
+                        st.write("Debug information:")
+                        st.write(f"City: {city}")
+                        st.write(f"Canton: {selected_canton}")
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Swiss Real Estate Regulations")

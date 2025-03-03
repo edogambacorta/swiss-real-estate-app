@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
@@ -18,6 +18,7 @@ class PropertyData(BaseModel):
     size: Optional[str] = Field(description="Size of the property in square meters")
     rooms: Optional[str] = Field(description="Number of rooms")
     image_url: Optional[str] = Field(description="URL of the property image")
+    listing_url: Optional[str] = Field(description="URL of the original property listing")
 
 class PropertiesResponse(BaseModel):
     properties: List[PropertyData] = Field(description="List of properties")
@@ -51,7 +52,7 @@ class SwissPropertyAgent:
         except Exception as e:
             raise ValueError(f"Error initializing APIs: {str(e)}")
 
-    def find_properties(self, city: str, max_price: float, property_type: str = "Apartment", canton: Optional[str] = None) -> Optional[List[Dict]]:
+    def find_properties(self, city: str, min_price: float, max_price: float, property_type: str = "Apartment", canton: Optional[str] = None) -> Optional[List[Dict]]:
         formatted_city = city.lower().replace(" ", "-")
         canton_code = get_canton_code(canton) if canton else None
         
@@ -62,26 +63,34 @@ class SwissPropertyAgent:
         ]
         
         try:
-            prompt = f"Extract property listings in {city} under {max_price} CHF, including image URLs"
+            prompt = f"Extract property listings in {city} between {min_price} and {max_price} CHF, including image URLs and original listing URLs"
             if canton_code:
                 prompt += f" in the canton of {get_canton_name(canton_code)}"
             
+            print(f"API Request - URLs: {urls}, Prompt: {prompt}")  # Debug log
             response = self.firecrawl.extract(urls, {
                 'prompt': prompt,
                 'schema': PropertiesResponse.model_json_schema(),
             })
+            print(f"Raw API Response: {response}")  # Debug log
             
             properties = response['data']['properties']
+            print(f"Number of properties before filtering: {len(properties)}")  # Debug log
             
-            # Process properties to ensure image URLs are present
+            # Process properties to ensure image URLs and listing URLs are present and filter by price range
+            filtered_properties = []
             for prop in properties:
-                if 'image_url' not in prop or not prop['image_url']:
-                    prop['image_url'] = self._extract_image_url(prop)
+                if 'image_url' not in prop or not prop['image_url'] or 'listing_url' not in prop or not prop['listing_url']:
+                    prop['image_url'], prop['listing_url'] = self._extract_urls(prop)
+                price = self._parse_price(prop['price'])
+                if min_price <= price <= max_price:
+                    filtered_properties.append(prop)
             
             if canton_code:
-                properties = [prop for prop in properties if prop['canton'] == canton_code]
+                filtered_properties = [prop for prop in filtered_properties if prop['canton'] == canton_code]
             
-            return properties
+            print(f"Number of properties after filtering: {len(filtered_properties)}")  # Debug log
+            return filtered_properties
         except Exception as e:
             error_message = f"Error finding properties: {str(e)}"
             print(error_message)
@@ -89,13 +98,13 @@ class SwissPropertyAgent:
                 print(f"API Response: {e.response.text}")
             return None
 
-    def _extract_image_url(self, property_data: Dict) -> Optional[str]:
+    def _extract_urls(self, property_data: Dict) -> Tuple[Optional[str], Optional[str]]:
         try:
-            # Extract image URL from the property data
-            return property_data.get('image_url')
+            # Extract image URL and listing URL from the property data
+            return property_data.get('image_url'), property_data.get('listing_url')
         except Exception as e:
-            print(f"Error extracting image URL: {str(e)}")
-            return None
+            print(f"Error extracting image URL or listing URL: {str(e)}")
+            return None, None
 
     def filter_properties_by_canton(self, properties: List[Dict], canton: str) -> List[Dict]:
         canton_code = get_canton_code(canton)
@@ -117,10 +126,13 @@ class SwissPropertyAgent:
             if canton_code:
                 prompt += f" and the canton of {canton_name}"
             
+            print(f"Location Trends API Request - URLs: {urls}, Prompt: {prompt}")  # Debug log
             response = self.firecrawl.extract(urls, {
                 'prompt': prompt,
                 'schema': LocationsResponse.model_json_schema(),
             })
+            print(f"Location Trends Raw API Response: {response}")  # Debug log
+            
             trends = response['data']['locations']
             
             # Process the trends data into a structured format
@@ -140,10 +152,32 @@ class SwissPropertyAgent:
             print(f"Error getting location trends: {str(e)}")
             return {"market_trends": [default_item] * 5}
 
-    def analyze_properties(self, properties: List[Dict], city: str, canton: Optional[str] = None) -> str:
+    def _parse_price(self, price_str: str) -> float:
+        try:
+            # Remove 'CHF', commas, and any other non-numeric characters (except '.')
+            cleaned_price = ''.join(char for char in price_str if char.isdigit() or char == '.')
+            return float(cleaned_price)
+        except ValueError:
+            print(f"Unable to parse price: {price_str}")  # Debug log
+            return float('inf')  # Return infinity for unparseable prices
+
+    def test_api_connection(self):
+        try:
+            # Make a simple API call to test the connection
+            response = self.firecrawl.extract(["https://www.example.com"], {
+                'prompt': "Extract the title of the page",
+                'schema': {"type": "object", "properties": {"title": {"type": "string"}}}
+            })
+            print("API connection successful")
+            return True
+        except Exception as e:
+            print(f"API connection failed: {str(e)}")
+            return False
+
+    def analyze_properties(self, properties: List[Dict], city: str, min_price: float, max_price: float, canton: Optional[str] = None) -> str:
         canton_name = get_canton_name(get_canton_code(canton)) if canton else None
-        context = f"from {city}" + (f" in the canton of {canton_name}" if canton_name else "")
-        return self.agent.run(f"Analyze these properties {context} and provide recommendations, considering any canton-specific factors:\n{properties}")
+        context = f"from {city} with prices between {min_price} and {max_price} CHF" + (f" in the canton of {canton_name}" if canton_name else "")
+        return self.agent.run(f"Analyze these properties {context} and provide recommendations, considering the specified price range and any canton-specific factors:\n{properties}")
 
     def get_canton_statistics(self, canton: str) -> Dict:
         canton_code = get_canton_code(canton)
