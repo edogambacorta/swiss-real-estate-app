@@ -14,6 +14,29 @@ def create_property_agent():
             st.error(f"Error initializing SwissPropertyAgent: {str(e)}")
             st.session_state.property_agent = None
 
+def display_property(property):
+    with st.expander(f"{property['building_name']} - {property['price']}"):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"**Location:** {property['location_address']}")
+            st.write(f"**Type:** {property['property_type']}")
+        with col2:
+            st.write(f"**Size:** {property.get('size', 'N/A')}")
+            st.write(f"**Rooms:** {property.get('rooms', 'N/A')}")
+        st.write("**Description:**")
+        st.write(property['description'][:200] + "..." if len(property['description']) > 200 else property['description'])
+
+def parse_price(price_str):
+    if price_str == 'Price on request':
+        return float('inf')
+    # Remove 'CHF', commas, and any other non-numeric characters (except '.')
+    cleaned_price = ''.join(char for char in price_str if char.isdigit() or char == '.')
+    try:
+        return float(cleaned_price)
+    except ValueError:
+        # If we can't parse the price, return infinity so it appears at the end of sorted lists
+        return float('inf')
+
 def main():
     st.set_page_config(page_title="Swiss Real Estate Agent", page_icon="🏡", layout="wide")
     
@@ -41,11 +64,39 @@ def main():
             return
         
         with st.spinner("🔍 Searching..."):
-            results = st.session_state.property_agent.find_properties(city, max_price, property_type)
-            if results:
-                st.markdown(results)
+            properties = st.session_state.property_agent.find_properties(city, max_price, property_type)
+            if properties:
+                # Sorting options
+                sort_option = st.selectbox("Sort by:", ["Price (Low to High)", "Price (High to Low)", "Size (Small to Large)", "Size (Large to Small)"])
+                
+                if sort_option == "Price (Low to High)":
+                    properties.sort(key=lambda x: parse_price(x['price']))
+                elif sort_option == "Price (High to Low)":
+                    properties.sort(key=lambda x: parse_price(x['price']), reverse=True)
+                elif sort_option == "Size (Small to Large)":
+                    properties.sort(key=lambda x: float(x.get('size', '0').split()[0]) if x.get('size') else 0)
+                elif sort_option == "Size (Large to Small)":
+                    properties.sort(key=lambda x: float(x.get('size', '0').split()[0]) if x.get('size') else 0, reverse=True)
+                
+                # Pagination
+                items_per_page = 5
+                page_number = st.number_input("Page", min_value=1, max_value=(len(properties) - 1) // items_per_page + 1, value=1)
+                start_idx = (page_number - 1) * items_per_page
+                end_idx = start_idx + items_per_page
+                
+                for property in properties[start_idx:end_idx]:
+                    display_property(property)
+                
+                st.write(f"Showing {start_idx + 1}-{min(end_idx, len(properties))} of {len(properties)} properties")
+                
+                # Property analysis
+                if st.button("Analyze Properties"):
+                    with st.spinner("Analyzing properties..."):
+                        analysis = st.session_state.property_agent.analyze_properties(properties, city)
+                        st.markdown("## Property Analysis")
+                        st.markdown(analysis)
             else:
-                st.error("An error occurred while searching for properties. Please try again.")
+                st.error("No properties found or an error occurred while searching. Please try again.")
         
         with st.spinner("📊 Analyzing Trends..."):
             trends = st.session_state.property_agent.get_location_trends(city)
