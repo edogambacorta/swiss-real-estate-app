@@ -43,6 +43,8 @@ def apply_custom_css():
             margin-bottom: 20px;
             padding: 20px;
             width: 100%;
+            display: flex;
+            flex-direction: column;
         }
         .property-header {
             display: flex;
@@ -57,6 +59,8 @@ def apply_custom_css():
         .property-content {
             flex: 1;
             padding-left: 20px;
+            display: flex;
+            flex-direction: column;
         }
         .property-title {
             font-size: 28px;
@@ -64,11 +68,17 @@ def apply_custom_css():
             color: #1e3a8a;
             margin-bottom: 10px;
         }
+        .price-button-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
         .property-price {
             font-size: 24px;
             font-weight: bold;
             color: #059669;
-            margin-bottom: 15px;
+            margin-bottom: 0;
         }
         .property-detail-item {
             font-size: 18px;
@@ -90,7 +100,6 @@ def apply_custom_css():
             border-radius: 5px;
             text-decoration: none;
             display: inline-block;
-            margin-top: 15px;
             border: none;
             cursor: pointer;
             transition: background-color 0.3s;
@@ -163,7 +172,6 @@ def display_property(property):
     
     with col2:
         st.markdown(f"<h3 class='property-title'>{property['building_name']}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h4 class='property-price'>CHF {formatted_price}</h4>", unsafe_allow_html=True)
         
         st.markdown(f"<p class='property-detail-item' style='font-size: 24px;'>📍 <strong>Location:</strong> {property['location_address']}</p>", unsafe_allow_html=True)
         st.markdown(f"<p class='property-detail-item' style='font-size: 24px;'>🏠 <strong>Type:</strong> {property['property_type']}</p>", unsafe_allow_html=True)
@@ -172,8 +180,11 @@ def display_property(property):
         
         st.markdown(f"<h4 class='property-detail-item' style='font-size: 24px;'>📝 <strong>Description:</strong></h4>", unsafe_allow_html=True)
         st.markdown(f"<p class='property-description'>{property['description']}</p>", unsafe_allow_html=True)
-    
-    st.markdown(f"<a href='{property['listing_url']}' class='view-listing-button' target='_blank'>View Listing</a>", unsafe_allow_html=True)
+        
+        st.markdown("<div class='price-button-container'>", unsafe_allow_html=True)
+        st.markdown(f"<h4 class='property-price'>CHF {formatted_price}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<a href='{property['listing_url']}' class='view-listing-button' target='_blank'>View Listing</a>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
     
     st.markdown("</div>", unsafe_allow_html=True)
 
