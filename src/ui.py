@@ -223,7 +223,8 @@ def render_city_overview(city_overview):
 def search_properties(city, min_price, max_price, canton, debug_mode):
     selected_canton = None if canton == "All" else canton
     num_results = 10
-    properties = st.session_state.property_agent.find_properties(city, min_price, max_price, selected_canton, num_results=num_results)
+    with st.spinner('Searching for properties...'):
+        properties = st.session_state.property_agent.find_properties(city, min_price, max_price, selected_canton, num_results=num_results)
     
     if debug_mode:
         st.write(f"Raw properties data: {properties}")
@@ -296,8 +297,8 @@ def main():
     st.markdown("<div class='centered-content'>", unsafe_allow_html=True)
     
     city = st.text_input("City", placeholder="e.g., Zurich, Geneva")
-    min_price = st.number_input("Min Price (CHF)", min_value=0.0, step=100000.0, value=0.0)
-    max_price = st.number_input("Max Price (CHF)", min_value=0.0, step=100000.0, value=1000000.0)
+    min_price = st.number_input("Min Price (CHF)", min_value=0.0, step=100000.0, value=500000.0)
+    max_price = st.number_input("Max Price (CHF)", min_value=0.0, step=100000.0, value=2000000.0)
     
     canton = st.selectbox("Canton", ["All"] + get_all_canton_names())
 
