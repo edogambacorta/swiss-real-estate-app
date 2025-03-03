@@ -58,6 +58,17 @@ def parse_price(price_str):
         # If we can't parse the price, return infinity so it appears at the end of sorted lists
         return float('inf')
 
+def display_bullet_points(data, title):
+    st.subheader(title)
+    for item in data:
+        st.markdown(f"• **{item['header']}**: {item['subheader']}")
+
+def display_market_trends(trends_data):
+    display_bullet_points(trends_data["market_trends"], "📈 Market Trends Summary")
+
+def display_canton_statistics(canton_data):
+    display_bullet_points(canton_data["real_estate_statistics"], f"📊 {canton_data['canton_name']} Real Estate Statistics")
+
 def main():
     st.set_page_config(page_title="Swiss Real Estate Agent", page_icon="🏡", layout="wide")
     
@@ -131,23 +142,21 @@ def main():
             else:
                 st.error("No properties found or an error occurred while searching. Please try again.")
         
-        with st.spinner("📊 Analyzing Trends..."):
+        with st.spinner("📊 Analyzing Market Insights..."):
             trends = st.session_state.property_agent.get_location_trends(city, selected_canton)
-            if trends:
-                with st.expander("📈 Market Trends"):
-                    st.markdown(trends)
+            canton_stats = st.session_state.property_agent.get_canton_statistics(selected_canton) if selected_canton else None
+            
+            if trends or canton_stats:
+                with st.expander("📈 Market Insights", expanded=True):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if trends:
+                            display_market_trends(trends)
+                    with col2:
+                        if selected_canton and canton_stats:
+                            display_canton_statistics(canton_stats)
             else:
-                st.error("An error occurred while analyzing market trends. Please try again.")
-
-        # Canton-specific statistics
-        if selected_canton:
-            with st.spinner("📊 Fetching Canton Statistics..."):
-                canton_stats = st.session_state.property_agent.get_canton_statistics(selected_canton)
-                if canton_stats:
-                    with st.expander(f"📊 {selected_canton} Real Estate Statistics"):
-                        st.markdown(canton_stats)
-                else:
-                    st.error(f"An error occurred while fetching statistics for {selected_canton}. Please try again.")
+                st.error("An error occurred while analyzing market insights. Please try again.")
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Swiss Real Estate Regulations")
