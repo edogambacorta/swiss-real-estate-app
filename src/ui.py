@@ -1,11 +1,16 @@
 import streamlit as st
 from swiss_real_estate_agent import SwissPropertyAgent
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 def create_property_agent():
     if 'property_agent' not in st.session_state:
         st.session_state.property_agent = SwissPropertyAgent(
-            firecrawl_api_key=st.session_state.firecrawl_key,
-            openai_api_key=st.session_state.openai_key,
+            firecrawl_api_key=os.getenv('FIRECRAWL_API_KEY'),
+            openai_api_key=os.getenv('OPENAI_API_KEY'),
             model_id="gpt-4o"
         )
 
@@ -14,8 +19,7 @@ def main():
     
     with st.sidebar:
         st.title("🔑 Configuration")
-        st.session_state.firecrawl_key = st.text_input("Firecrawl API Key", type="password")
-        st.session_state.openai_key = st.text_input("OpenAI API Key", type="password")
+        st.info("API keys are now loaded from environment variables.")
         
         language = st.selectbox("Language / Sprache / Langue / Lingua", ["English", "Deutsch", "Français", "Italiano"])
         
@@ -32,8 +36,8 @@ def main():
     canton = st.selectbox("Canton", ["All"] + ["Zurich", "Geneva", "Bern", "Vaud", "Valais", "St. Gallen", "Ticino", "Basel-Stadt", "Lucerne", "Aargau"])
 
     if st.button("🔍 Search Properties"):
-        if not all([st.session_state.firecrawl_key, st.session_state.openai_key]):
-            st.error("⚠️ Please enter API keys!")
+        if not all([os.getenv('FIRECRAWL_API_KEY'), os.getenv('OPENAI_API_KEY')]):
+            st.error("⚠️ API keys not found in environment variables!")
             return
         
         create_property_agent()

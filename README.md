@@ -42,6 +42,8 @@ An AI-powered real estate application focused on the Swiss market, built with St
    OPENAI_API_KEY=your_openai_api_key
    ```
 
+   IMPORTANT: Keep your `.env` file secure and never commit it to version control. It's added to `.gitignore` by default.
+
 ## Usage
 
 Run the Streamlit app:
@@ -51,6 +53,15 @@ streamlit run main.py
 ```
 
 Open your web browser and go to `http://localhost:8501` to use the Swiss Real Estate App.
+
+## API Key Security
+
+This application uses environment variables to securely store API keys. Always follow these best practices:
+
+1. Never share your API keys publicly or commit them to version control.
+2. Use environment variables or secure secret management systems in production.
+3. Regularly rotate your API keys, especially if you suspect they've been compromised.
+4. Set appropriate permissions and rate limits on your API keys when possible.
 
 ## Contributing
 
