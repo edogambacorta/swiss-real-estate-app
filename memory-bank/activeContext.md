@@ -27,6 +27,12 @@
    - Added Watchdog to requirements.txt
    - Updated techContext.md to include Watchdog in the list of technologies used
 
+6. Updated src/ui.py to improve image loading:
+   - Enhanced error handling in the `load_image` function
+   - Implemented a retry mechanism for image loading
+   - Added logging for better debugging of image loading issues
+   - Updated the `display_property` function to handle image loading failures gracefully
+
 ## Current Focus
 
 - Enhancing the application with comprehensive canton-based functionality
@@ -54,6 +60,6 @@
 
 ## Known Issues
 
-- None currently identified related to recent canton-based feature implementations
+- Image loading errors were occurring for certain images. This has been addressed with improved error handling and a retry mechanism, but the root cause (potentially related to image format or server issues) may still need further investigation.
 
-This active context reflects the current state of the project as of the latest updates to incorporate comprehensive canton-based functionality. It will be updated as the project evolves and new changes are implemented.
+This active context reflects the current state of the project as of the latest updates to incorporate comprehensive canton-based functionality and improve image loading reliability. It will be updated as the project evolves and new changes are implemented.

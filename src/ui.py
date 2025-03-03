@@ -3,9 +3,14 @@ from src.swiss_real_estate_agent import SwissPropertyAgent
 from src.cantons import get_all_canton_names, get_canton_name, get_canton_code
 import os
 from dotenv import load_dotenv
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import requests
 from io import BytesIO
+from requests.exceptions import RequestException
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 st.set_page_config(page_title="Swiss Real Estate Agent", page_icon="🏡", layout="wide")
 
@@ -96,14 +101,26 @@ def create_property_agent():
             st.error(f"Error initializing SwissPropertyAgent: {str(e)}")
             st.session_state.property_agent = None
 
-def load_image(url):
-    try:
-        response = requests.get(url)
-        img = Image.open(BytesIO(response.content))
-        return img
-    except Exception as e:
-        st.error(f"Error loading image: {str(e)}")
-        return None
+def load_image(url, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            img = Image.open(BytesIO(response.content))
+            img.load()  # This will raise an exception for corrupt images
+            return img
+        except RequestException as e:
+            logging.error(f"Network error loading image from {url}: {str(e)}")
+        except UnidentifiedImageError:
+            logging.error(f"Unidentified image format from {url}")
+        except Exception as e:
+            logging.error(f"Error loading image from {url}: {str(e)}")
+        
+        if attempt < max_retries - 1:
+            logging.info(f"Retrying image load from {url} (attempt {attempt + 2}/{max_retries})")
+    
+    logging.warning(f"Failed to load image from {url} after {max_retries} attempts")
+    return None  # Return None for failed image loads
 
 def display_property(property):
     price = property['price']
@@ -119,18 +136,14 @@ def display_property(property):
         if image_url is None:
             st.image('https://via.placeholder.com/300x225?text=No+Image+URL', use_container_width=True)
         else:
-            try:
-                if image_url.startswith(('http://', 'https://')):
-                    image = load_image(image_url)
-                    if image is not None:
-                        st.image(image, use_container_width=True)
-                    else:
-                        st.image('https://via.placeholder.com/300x225?text=Image+Load+Error', use_container_width=True)
+            if image_url.startswith(('http://', 'https://')):
+                image = load_image(image_url)
+                if image is not None:
+                    st.image(image, use_container_width=True)
                 else:
-                    st.image('https://via.placeholder.com/300x225?text=Invalid+URL', use_container_width=True)
-            except Exception as e:
-                st.error(f"Error displaying image: {str(e)}")
-                st.image('https://via.placeholder.com/300x225?text=Image+Display+Error', use_container_width=True)
+                    st.image('https://via.placeholder.com/300x225?text=Image+Load+Error', use_container_width=True)
+            else:
+                st.image('https://via.placeholder.com/300x225?text=Invalid+URL', use_container_width=True)
     
     with col2:
         st.markdown(f"<h3 class='property-title'>{property['building_name']}</h3>", unsafe_allow_html=True)
@@ -163,11 +176,10 @@ def display_bullet_points(data, title):
     for item in data:
         st.markdown(f"• **{item['header']}**: {item['subheader']}")
 
-def display_market_trends(trends_data):
-    display_bullet_points(trends_data["market_trends"], "📈 Market Trends Summary")
-
-def display_canton_statistics(canton_data):
-    display_bullet_points(canton_data["real_estate_statistics"], f"📊 {canton_data['canton_name']} Real Estate Statistics")
+def render_city_overview(city_overview):
+    st.subheader("🏙️ City Overview")
+    for key, value in city_overview.items():
+        st.markdown(f"• **{key}**: {value}")
 
 def search_properties(city, min_price, max_price, property_type, canton, debug_mode):
     selected_canton = None if canton == "All" else canton
@@ -213,28 +225,27 @@ def search_properties(city, min_price, max_price, property_type, canton, debug_m
     
     return selected_canton
 
-def analyze_market_insights(city, min_price, max_price, selected_canton, debug_mode):
-    with st.spinner("📊 Analyzing Market Insights..."):
-        trends = st.session_state.property_agent.get_location_trends(city, selected_canton)
-        canton_stats = st.session_state.property_agent.get_canton_statistics(selected_canton) if selected_canton else None
-        
-        if trends or canton_stats:
-            with st.expander("📈 Market Insights", expanded=True):
-                col1, col2 = st.columns(2)
-                with col1:
-                    if trends:
-                        st.write(f"Market Trends for properties between {min_price} and {max_price} CHF:")
-                        display_market_trends(trends)
-                with col2:
-                    if selected_canton and canton_stats:
-                        st.write(f"Canton Statistics for properties between {min_price} and {max_price} CHF:")
-                        display_canton_statistics(canton_stats)
-        else:
-            st.error("An error occurred while analyzing market insights. Please try again.")
+def display_city_overview(city, selected_canton, debug_mode):
+    with st.spinner("🏙️ Fetching City Overview..."):
+        try:
+            logging.info(f"Fetching city overview for {city}, {selected_canton}")
+            city_overview = st.session_state.property_agent.get_city_overview(city, selected_canton)
+            
+            if city_overview:
+                logging.info(f"City overview fetched successfully for {city}, {selected_canton}")
+                with st.expander("🏙️ City Overview", expanded=True):
+                    render_city_overview(city_overview)
+            else:
+                logging.warning(f"No city overview data available for {city}, {selected_canton}")
+                st.warning("No city overview data available for the selected city and canton.")
+        except Exception as e:
+            logging.error(f"Error fetching city overview for {city}, {selected_canton}: {str(e)}")
+            st.error("An error occurred while fetching the city overview. Please try again.")
             if debug_mode:
                 st.write("Debug information:")
                 st.write(f"City: {city}")
                 st.write(f"Canton: {selected_canton}")
+                st.write(f"Error: {str(e)}")
 
 def main():
     apply_custom_css()
@@ -262,20 +273,26 @@ def main():
 
     selected_canton = None
     if st.button("🔍 Search Properties"):
+        logging.info("Search button clicked")
         create_property_agent()
         if st.session_state.property_agent is None:
+            logging.error("Failed to create SwissPropertyAgent")
             return
         
         if debug_mode:
             st.write("Testing API connection...")
             api_test_result = st.session_state.property_agent.test_api_connection()
             st.write(f"API Test Result: {'Success' if api_test_result else 'Failed'}")
+            logging.info(f"API Test Result: {'Success' if api_test_result else 'Failed'}")
         
         if min_price >= max_price:
+            logging.warning(f"Invalid price range: {min_price} - {max_price}")
             st.error("Minimum price must be less than maximum price.")
         else:
+            logging.info(f"Searching properties for {city}, {canton}, {property_type}, price range: {min_price} - {max_price}")
             selected_canton = search_properties(city, min_price, max_price, property_type, canton, debug_mode)
-            analyze_market_insights(city, min_price, max_price, selected_canton, debug_mode)
+            logging.info(f"Displaying city overview for {city}, {selected_canton}")
+            display_city_overview(city, selected_canton, debug_mode)
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Swiss Real Estate Regulations")

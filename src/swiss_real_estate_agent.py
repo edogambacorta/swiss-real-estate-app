@@ -6,6 +6,11 @@ from firecrawl import FirecrawlApp
 import os
 from dotenv import load_dotenv
 from .cantons import get_canton_code, get_canton_name, get_all_canton_names
+import requests
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Swiss-specific property data schema
 class PropertyData(BaseModel):
@@ -180,10 +185,137 @@ class SwissPropertyAgent:
             print(f"API connection failed: {str(e)}")
             return False
 
+    def get_city_overview(self, city: str, canton: str) -> Dict[str, str]:
+        canton_code = get_canton_code(canton)
+        canton_name = get_canton_name(canton_code)
+        
+        try:
+            # Use a more robust method to fetch population data (placeholder for now)
+            population = self.get_population(city)
+
+            # Use our existing canton data for language information
+            main_languages = self.get_canton_languages(canton_code)
+
+            # Determine geographic location based on canton
+            geographic_location = self.get_geographic_location(canton_name)
+
+            # Get notable features
+            notable_features = self.get_notable_features(city, canton_name)
+
+            overview = {
+                "Population": str(population),
+                "Canton": canton_name,
+                "Geographic Location": geographic_location,
+                "Main Language(s)": ", ".join(main_languages),
+                "Notable Features": notable_features
+            }
+            logging.info(f"City overview for {city}, {canton_name}: {overview}")
+            return overview
+        except Exception as e:
+            logging.error(f"Error getting city overview for {city}, {canton_name}: {str(e)}")
+            return {
+                "Population": "Data not available",
+                "Canton": canton_name,
+                "Geographic Location": f"A city in {canton_name}",
+                "Main Language(s)": "Data not available",
+                "Notable Features": "Data not available"
+            }
+
+    def get_population(self, city: str) -> str:
+        # Placeholder for a more robust population data fetching method
+        # In a real implementation, this would use a reliable API or database
+        population_data = {
+            "Basel": "172,258",
+            "Zurich": "402,762",
+            "Geneva": "201,818",
+            "Bern": "133,883",
+            "Lausanne": "139,111"
+        }
+        return population_data.get(city, "Data not available")
+
+    def get_canton_languages(self, canton_code: str) -> List[str]:
+        swiss_languages = {
+            "ZH": ["German"],
+            "BE": ["German", "French"],
+            "LU": ["German"],
+            "UR": ["German"],
+            "SZ": ["German"],
+            "OW": ["German"],
+            "NW": ["German"],
+            "GL": ["German"],
+            "ZG": ["German"],
+            "FR": ["French", "German"],
+            "SO": ["German"],
+            "BS": ["German"],
+            "BL": ["German"],
+            "SH": ["German"],
+            "AR": ["German"],
+            "AI": ["German"],
+            "SG": ["German"],
+            "GR": ["German", "Romansh", "Italian"],
+            "AG": ["German"],
+            "TG": ["German"],
+            "TI": ["Italian"],
+            "VD": ["French"],
+            "VS": ["French", "German"],
+            "NE": ["French"],
+            "GE": ["French"],
+            "JU": ["French"]
+        }
+        languages = swiss_languages.get(canton_code, ["Data not available"])
+        logging.info(f"Languages for canton {canton_code}: {languages}")
+        return languages
+
+    def get_geographic_location(self, canton_name: str) -> str:
+        regions = {
+            "Eastern Switzerland": ["St. Gallen", "Thurgau", "Appenzell Ausserrhoden", "Appenzell Innerrhoden", "Glarus", "Schaffhausen"],
+            "Central Switzerland": ["Lucerne", "Uri", "Schwyz", "Obwalden", "Nidwalden", "Zug"],
+            "Northern Switzerland": ["Aargau", "Basel-Stadt", "Basel-Landschaft"],
+            "Zurich": ["Zurich"],
+            "Western Switzerland": ["Bern", "Fribourg", "Neuchâtel", "Jura", "Vaud", "Geneva"],
+            "Southern Switzerland": ["Ticino"],
+            "Southeastern Switzerland": ["Graubünden"]
+        }
+        for region, cantons in regions.items():
+            if canton_name in cantons:
+                location = f"Located in {region}"
+                logging.info(f"Geographic location for {canton_name}: {location}")
+                return location
+        location = f"Located in Switzerland"
+        logging.info(f"Geographic location for {canton_name}: {location}")
+        return location
+
+    def get_notable_features(self, city: str, canton_name: str) -> str:
+        notable_features = {
+            "Zurich": "Financial hub, home to Swiss Stock Exchange",
+            "Geneva": "International organizations, CERN, watchmaking industry",
+            "Basel": "Pharmaceutical industry, art and culture",
+            "Bern": "Capital city, UNESCO World Heritage Old Town",
+            "Lausanne": "Olympic Capital, home to International Olympic Committee",
+            "Lucerne": "Tourism, Chapel Bridge, Water Tower",
+            "St. Gallen": "Textile industry, Abbey of Saint Gall",
+            "Lugano": "Italian-speaking, financial center, Lake Lugano",
+            "Winterthur": "Industrial heritage, museums and galleries",
+            "Zug": "Low-tax region, cryptocurrency valley"
+        }
+        features = notable_features.get(city, f"A significant city in the canton of {canton_name}")
+        logging.info(f"Notable features for {city}, {canton_name}: {features}")
+        return features
+
     def analyze_properties(self, properties: List[Dict], city: str, min_price: float, max_price: float, canton: Optional[str] = None) -> str:
         canton_name = get_canton_name(get_canton_code(canton)) if canton else None
         context = f"from {city} with prices between {min_price} and {max_price} CHF" + (f" in the canton of {canton_name}" if canton_name else "")
-        return self.agent.run(f"Analyze these properties {context} and provide recommendations, considering the specified price range and any canton-specific factors:\n{properties}")
+        
+        city_overview = self.get_city_overview(city, canton) if canton else {}
+        overview_str = "\n".join([f"{k}: {v}" for k, v in city_overview.items()])
+        
+        return self.agent.run(f"""
+        City Overview:
+        {overview_str}
+
+        Analyze these properties {context} and provide recommendations, considering the city overview, specified price range, and any canton-specific factors:
+        {properties}
+        """)
 
     def get_canton_statistics(self, canton: str) -> Dict:
         canton_code = get_canton_code(canton)

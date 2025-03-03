@@ -6,12 +6,16 @@ An AI-powered real estate application focused on the Swiss market, built with St
 
 - Property search across major Swiss real estate websites
 - AI-powered property analysis and recommendations
-- Location trend analysis and investment insights
+- City overview with key information:
+  - Population
+  - Canton
+  - Geographic location
+  - Main language(s)
+  - Notable features
 - Multilingual support (English, German, French, Italian)
 - Comprehensive canton-based functionality:
   - Canton-specific property filtering
   - Canton-level real estate statistics
-  - Canton-specific market trends and analysis
 - Integration of Swiss real estate regulations, including canton-specific rules
 - Dynamic canton selection with support for all 26 Swiss cantons
 - Property images:
@@ -68,13 +72,15 @@ An AI-powered real estate application focused on the Swiss market, built with St
 
 4. Use the canton selection dropdown to filter properties and view canton-specific information.
 
-5. Explore canton-level statistics and market trends in the expanded analysis sections.
+5. After searching for properties, view the city overview in the expanded section, which provides key information about the selected city.
 
-6. View property thumbnails in the listings and click on a property to see its full-size image and details.
+6. Explore property listings, including thumbnails and detailed information for each property.
 
 7. Use the "View Listing" button to access the original property listing on the source website for more detailed information.
 
 8. If you encounter any errors related to API keys, data retrieval, or image loading, check your `.env` file and ensure the keys are correct and your internet connection is stable.
+
+9. The city overview feature provides a quick snapshot of important information about the city, helping you make more informed decisions about potential property investments.
 
 ## Canton-Specific Functionality
 
