@@ -27,14 +27,15 @@ def apply_custom_css():
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             margin-bottom: 20px;
+            padding: 20px;
         }
         .property-header {
             display: flex;
-            padding: 20px;
+            margin-bottom: 20px;
         }
         .property-thumbnail {
-            width: 200px;
-            height: 150px;
+            width: 300px;
+            height: 225px;
             object-fit: cover;
             border-radius: 5px;
         }
@@ -43,19 +44,19 @@ def apply_custom_css():
             padding-left: 20px;
         }
         .property-title {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             color: #1e3a8a;
             margin-bottom: 10px;
         }
         .property-price {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             color: #059669;
             margin-bottom: 15px;
         }
         .property-detail-item {
-            font-size: 16px;
+            font-size: 18px;
             margin-bottom: 10px;
         }
         .property-detail-item strong {
@@ -63,14 +64,14 @@ def apply_custom_css():
             color: #1e3a8a;
         }
         .property-description {
-            font-size: 14px;
+            font-size: 16px;
             color: #4b5563;
             margin-top: 15px;
         }
         .view-listing-button {
-            background-color: #059669;
+            background-color: #2563eb;
             color: white !important;
-            padding: 10px 15px;
+            padding: 12px 20px;
             border-radius: 5px;
             text-decoration: none;
             display: inline-block;
@@ -78,9 +79,11 @@ def apply_custom_css():
             border: none;
             cursor: pointer;
             transition: background-color 0.3s;
+            font-size: 16px;
+            font-weight: bold;
         }
         .view-listing-button:hover {
-            background-color: #047857;
+            background-color: #1d4ed8;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -107,29 +110,27 @@ def display_property(property):
     if not price.startswith('CHF'):
         price = f"CHF {price}"
     
+    st.markdown("<div class='property-card'>", unsafe_allow_html=True)
+    
     col1, col2 = st.columns([1, 2])
     
     with col1:
-        st.image(property.get('image_url', 'https://via.placeholder.com/200x150?text=No+Image'), use_column_width=True)
+        st.image(property.get('image_url', 'https://via.placeholder.com/300x225?text=No+Image'), use_container_width=True)
     
     with col2:
-        st.markdown(f"<h3 style='color: #1e3a8a;'>{property['building_name']}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h4 style='color: #059669;'>{price}</h4>", unsafe_allow_html=True)
-        st.markdown(f"📍 **Location:** {property['location_address']}")
-        st.markdown(f"🏠 **Type:** {property['property_type']}")
+        st.markdown(f"<h3 class='property-title'>{property['building_name']}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h4 class='property-price'>{price}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p class='property-detail-item'>📍 <strong>Location:</strong> {property['location_address']}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p class='property-detail-item'>🏠 <strong>Type:</strong> {property['property_type']}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p class='property-detail-item'>📐 <strong>Size:</strong> {property.get('size', 'N/A')}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p class='property-detail-item'>🛏️ <strong>Rooms:</strong> {property.get('rooms', 'N/A')}</p>", unsafe_allow_html=True)
     
-    with st.expander("More Details"):
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown(f"📐 **Size:** {property.get('size', 'N/A')}")
-            st.markdown(f"🛏️ **Rooms:** {property.get('rooms', 'N/A')}")
-            st.markdown("### Description")
-            st.write(property['description'])
-            st.markdown(f"[View Listing]({property['listing_url']})")
-        
-        with col2:
-            st.image(property.get('image_url', 'https://via.placeholder.com/800x600?text=No+Image'), use_column_width=True)
+    with st.expander("Description"):
+        st.markdown(f"<p class='property-description'>{property['description']}</p>", unsafe_allow_html=True)
+    
+    st.markdown(f"<a href='{property['listing_url']}' class='view-listing-button' target='_blank'>View Listing</a>", unsafe_allow_html=True)
+    
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def parse_price(price_str):
     if price_str == 'Price on request':
